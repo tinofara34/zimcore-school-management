@@ -1,0 +1,125 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Health / connection test document
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // --- USERS COLLECTION ---
+    match /users/{userId} {
+      // Each user can read and manage their own profile
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // --- SCHOOLS COLLECTION & SUBCOLLECTIONS ---
+    match /schools/{schoolId} {
+      // Authenticated users can get school metadata (needed for owner view and bursar linking)
+      allow get: if isSignedIn() && isValidId(schoolId);
+      allow list: if isSignedIn();
+
+      // Only the authenticated creator can register a school as the owner
+      allow create: if isSignedIn() && isValidId(schoolId) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().name is string && incoming().name.size() > 0 && incoming().name.size() <= 120;
+
+      // Only the registered school owner can modify school master configuration
+      allow update: if isSignedIn() && isValidId(schoolId) &&
+        existing().ownerId == request.auth.uid;
+
+      allow delete: if false;
+
+      // Classes
+      match /classes/{classId} {
+        allow read: if isSignedIn();
+        allow create, update: if isSignedIn() &&
+          incoming().name is string && incoming().name.size() <= 64;
+        allow delete: if isSignedIn();
+      }
+
+      // Students
+      match /students/{studentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() &&
+          incoming().fullName is string && incoming().fullName.size() <= 120 &&
+          incoming().admissionNumber is string && incoming().admissionNumber.size() <= 64 &&
+          incoming().status in ['active', 'transferred', 'withdrawn'];
+        allow update: if isSignedIn() &&
+          incoming().admissionNumber == existing().admissionNumber &&
+          incoming().status in ['active', 'transferred', 'withdrawn'];
+        allow delete: if isSignedIn();
+      }
+
+      // Fee Structures
+      match /fee_structures/{feeStructureId} {
+        allow read: if isSignedIn();
+        allow create, update: if isSignedIn() &&
+          incoming().amount is number && incoming().amount >= 0;
+        allow delete: if isSignedIn();
+      }
+
+      // Payments (Strict financial controls & non-deletable)
+      match /payments/{paymentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() &&
+          incoming().amount is number && incoming().amount > 0 &&
+          incoming().receiptNumber is string && incoming().receiptNumber.size() <= 64 &&
+          incoming().status in ['confirmed', 'reversed'];
+        allow update: if isSignedIn() &&
+          incoming().amount == existing().amount &&
+          incoming().receiptNumber == existing().receiptNumber;
+        allow delete: if false;
+      }
+
+      // Expenses
+      match /expenses/{expenseId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() &&
+          incoming().amount is number && incoming().amount > 0 &&
+          incoming().category is string && incoming().category.size() <= 64 &&
+          incoming().status in ['confirmed', 'reversed'];
+        allow update: if isSignedIn() &&
+          incoming().amount == existing().amount;
+        allow delete: if false;
+      }
+
+      // Notifications
+      match /notifications/{notificationId} {
+        allow read, create: if isSignedIn();
+        allow update: if isSignedIn() &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['read']);
+        allow delete: if isSignedIn();
+      }
+
+      // Audit Logs (Immutable append-only trail)
+      match /audit_logs/{auditLogId} {
+        allow read, create: if isSignedIn();
+        allow update, delete: if false;
+      }
+    }
+  }
+}

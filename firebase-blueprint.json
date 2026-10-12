@@ -1,0 +1,202 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile linking authentication UID to their school and assigned role.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 254 },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "enum": ["owner", "bursar"] },
+        "schoolId": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["email", "role", "schoolId"]
+    },
+    "School": {
+      "title": "School",
+      "description": "Registered private school profile, academic settings, and subscription state.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 120 },
+        "ownerId": { "type": "string", "maxLength": 128 },
+        "ownerEmail": { "type": "string", "maxLength": 254 },
+        "phone": { "type": "string", "maxLength": 32 },
+        "address": { "type": "string", "maxLength": 200 },
+        "currency": { "type": "string", "enum": ["USD", "ZiG"] },
+        "currentAcademicYear": { "type": "string", "maxLength": 16 },
+        "currentTerm": { "type": "string", "enum": ["Term 1", "Term 2", "Term 3"] },
+        "subscriptionStatus": { "type": "string", "enum": ["active", "trial", "expired", "grace_period"] },
+        "subscriptionExpiryDate": { "type": "string" },
+        "bursarEmail": { "type": "string", "maxLength": 254 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "ownerId", "ownerEmail", "currency", "currentAcademicYear", "currentTerm", "subscriptionStatus"]
+    },
+    "Class": {
+      "title": "Class",
+      "description": "School class or grade section.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 64 },
+        "capacity": { "type": "number" },
+        "classTeacher": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Enrolled student record in the school.",
+      "type": "object",
+      "properties": {
+        "admissionNumber": { "type": "string", "maxLength": 64 },
+        "fullName": { "type": "string", "maxLength": 120 },
+        "dob": { "type": "string", "maxLength": 20 },
+        "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
+        "classId": { "type": "string", "maxLength": 64 },
+        "className": { "type": "string", "maxLength": 64 },
+        "academicYear": { "type": "string", "maxLength": 16 },
+        "termOfAdmission": { "type": "string", "enum": ["Term 1", "Term 2", "Term 3"] },
+        "enrolmentDate": { "type": "string", "maxLength": 20 },
+        "guardianName": { "type": "string", "maxLength": 120 },
+        "guardianPhone": { "type": "string", "maxLength": 32 },
+        "guardianAddress": { "type": "string", "maxLength": 200 },
+        "status": { "type": "string", "enum": ["active", "transferred", "withdrawn"] },
+        "customFeeDiscount": { "type": "number" },
+        "notes": { "type": "string", "maxLength": 500 },
+        "createdBy": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["admissionNumber", "fullName", "classId", "className", "academicYear", "termOfAdmission", "status"]
+    },
+    "FeeStructure": {
+      "title": "FeeStructure",
+      "description": "Fee schedule per class and term.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 100 },
+        "classId": { "type": "string", "maxLength": 64 },
+        "academicYear": { "type": "string", "maxLength": 16 },
+        "term": { "type": "string", "enum": ["Term 1", "Term 2", "Term 3"] },
+        "amount": { "type": "number" },
+        "mandatory": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "academicYear", "term", "amount"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Fee payment transaction recorded by bursar or owner.",
+      "type": "object",
+      "properties": {
+        "receiptNumber": { "type": "string", "maxLength": 64 },
+        "studentId": { "type": "string", "maxLength": 64 },
+        "admissionNumber": { "type": "string", "maxLength": 64 },
+        "studentName": { "type": "string", "maxLength": 120 },
+        "amount": { "type": "number" },
+        "paymentDate": { "type": "string", "maxLength": 20 },
+        "paymentMethod": { "type": "string", "enum": ["cash", "ecocash", "bank_transfer", "swipe", "other"] },
+        "reference": { "type": "string", "maxLength": 100 },
+        "term": { "type": "string", "enum": ["Term 1", "Term 2", "Term 3"] },
+        "academicYear": { "type": "string", "maxLength": 16 },
+        "recordedBy": { "type": "string", "maxLength": 128 },
+        "recordedByEmail": { "type": "string", "maxLength": 254 },
+        "recordedByName": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "enum": ["confirmed", "reversed"] },
+        "reversalReason": { "type": "string", "maxLength": 300 },
+        "reversedBy": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["receiptNumber", "studentId", "admissionNumber", "amount", "paymentDate", "paymentMethod", "status"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Operational school expenditure recorded by bursar or owner.",
+      "type": "object",
+      "properties": {
+        "category": { "type": "string", "maxLength": 64 },
+        "amount": { "type": "number" },
+        "description": { "type": "string", "maxLength": 250 },
+        "date": { "type": "string", "maxLength": 20 },
+        "paymentMethod": { "type": "string", "enum": ["cash", "ecocash", "bank_transfer", "swipe", "other"] },
+        "reference": { "type": "string", "maxLength": 100 },
+        "recordedBy": { "type": "string", "maxLength": 128 },
+        "recordedByEmail": { "type": "string", "maxLength": 254 },
+        "status": { "type": "string", "enum": ["confirmed", "reversed"] },
+        "reversalReason": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["category", "amount", "description", "date", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "In-app notifications for school activities.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 120 },
+        "message": { "type": "string", "maxLength": 500 },
+        "type": { "type": "string", "enum": ["enrolment", "payment", "expense", "alert"] },
+        "amount": { "type": "number" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "message", "type", "read"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable activity audit trail for administrative tracking.",
+      "type": "object",
+      "properties": {
+        "action": { "type": "string", "maxLength": 64 },
+        "entityType": { "type": "string", "maxLength": 64 },
+        "entityId": { "type": "string", "maxLength": 64 },
+        "details": { "type": "string", "maxLength": 500 },
+        "performedBy": { "type": "string", "maxLength": 128 },
+        "performedByEmail": { "type": "string", "maxLength": 254 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["action", "entityType", "performedBy", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User account mapping UID to schoolId and assigned role."
+    },
+    "/schools/{schoolId}": {
+      "schema": "School",
+      "description": "School profiles and master settings."
+    },
+    "/schools/{schoolId}/classes/{classId}": {
+      "schema": "Class",
+      "description": "Class and grade roster."
+    },
+    "/schools/{schoolId}/students/{studentId}": {
+      "schema": "Student",
+      "description": "Student enrolments for the school."
+    },
+    "/schools/{schoolId}/fee_structures/{feeStructureId}": {
+      "schema": "FeeStructure",
+      "description": "Fee definitions and schedules."
+    },
+    "/schools/{schoolId}/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Student payment transactions."
+    },
+    "/schools/{schoolId}/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "Operational school expenses."
+    },
+    "/schools/{schoolId}/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "School event alerts."
+    },
+    "/schools/{schoolId}/audit_logs/{auditLogId}": {
+      "schema": "AuditLog",
+      "description": "Auditable activity logs."
+    }
+  }
+}
